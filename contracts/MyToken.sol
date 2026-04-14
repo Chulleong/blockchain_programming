@@ -1,4 +1,4 @@
-// SPDX-License_Identifer: MIT
+// SPDX-License_Identifer: MINT
 pragma solidity ^0.8.28;
 
 contract MyToken {
@@ -21,15 +21,9 @@ contract MyToken {
         balanceOf[owner] += amount;
     }
 
-    // function totalSupply() external view returns (uint256) {
-    //     return totalSupply;
-    // }
-
-    // function balanceOf(address owner) external view returns (uint256) {
-    //     return balanceOf[owner];
-    // }
-
-    // function name() external view returns (string memory) {
-    //     return name;
-    // }
+    function transfer(uint256 amount, address to) external {
+        require(balanceof[msg.sender] >= amount, "Insufficient balance");
+        balanceOf[msg.sender] -= amount;
+        balanceOf[to] += amount;
+    }
 }
