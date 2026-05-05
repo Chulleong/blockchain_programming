@@ -1,8 +1,8 @@
-// SPDX-License_Identifer: MINT
 pragma solidity ^0.8.28;
+import "./ManagedAccess.sol";
 
-contract MyToken {
-    event Transfer(address indexed from, address to, uint256 value);
+contract MyToken is ManagedAccess {
+    event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(address indexed spender, uint256 amount);
 
     string public name;
@@ -12,17 +12,15 @@ contract MyToken {
     uint256 public totalSupply;
     mapping(address => uint256) public balanceOf;
     mapping(address => mapping(address => uint256)) public allowance;
+    
 
-    constructor(
-        string memory _name,
-        string memory _symbol,
-        uint8 _decimals,
-        uint256 _amount
-    ) {
+    constructor(string memory _name, string memory _symbol, uint8 _decimals, uint256 _amount
+    ) ManagedAccess(msg.sender, msg.sender) {
         name = _name;
         symbol = _symbol;
         decimals = _decimals;
-        _mint(_amount * 10 ** uint256(decimals), msg.sender);
+        _mint(_amount*10**uint256(decimals), msg.sender);
+
     }
 
     function approve(address spender, uint256 amount) external {
@@ -39,16 +37,40 @@ contract MyToken {
         emit Transfer(from, to, amount);
     }
 
-    function _mint(uint256 amount, address owner) internal {
-        totalSupply += amount;
-        balanceOf[owner] += amount;
+    function mint(uint256 amount, address to) external onlyManager{
+        _mint(amount, to);
     }
 
-    function transfer(uint256 amount, address to) external {
+    function setManager(address _manager) external onlyOwner{
+        manager = _manager;
+    }
+
+    function _mint(uint256 amount, address to) internal {
+        totalSupply += amount;
+        balanceOf[to] += amount;
+
+        emit Transfer(address(0), to, amount);
+    }
+
+    function transfer(address to, uint256 amount) external {
         require(balanceOf[msg.sender] >= amount, "Insufficient balance");
         balanceOf[msg.sender] -= amount;
         balanceOf[to] += amount;
 
         emit Transfer(msg.sender, to, amount);
     }
+
+    // function totalSupply() external view returns (uint256) {
+    //     return totalSupply;
+    // }
+
+    // function balanceOf(address owner) external view returns (uint256) {
+    //     return balanceOf[owner];
+    // }
+
+    // function name() external view returns (string memory) {
+    //     return name;
+    // }
+
+    
 }
