@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: MIT
+
 pragma solidity ^0.8.28;
 import "./ManagedAccess.sol";
-// stacking
-// deposit(MyToken) / withdraw(MyTOken)
 
 interface IMyToken {
     function transfer(address to, uint256 amount) external;
@@ -16,7 +15,7 @@ contract TinyBank is ManagedAccess {
     event Staked(address from, uint256 amount);
     event Withdraw(uint256 amount, address to);
 
-    IMyToken public stackingToken;
+    IMyToken public stakingToken;
 
     mapping(address => uint256) public lastClaimedBlock;
 
@@ -26,8 +25,8 @@ contract TinyBank is ManagedAccess {
     mapping(address => uint256) public staked;
     uint256 public totalStaked;
 
-    constructor(IMyToken _stackingToken) ManagedAccess(msg.sender, msg.sender) {
-        stackingToken = _stackingToken;
+    constructor(IMyToken _stakingToken) ManagedAccess(msg.sender, msg.sender) {
+        stakingToken = _stakingToken;
         rewardPerBlock = defaultRewardPerBlock;
     }
 
@@ -35,7 +34,7 @@ contract TinyBank is ManagedAccess {
         if (staked[to] > 0) {
             uint256 blocks = block.number - lastClaimedBlock[to];
             uint256 reward = (blocks * rewardPerBlock * staked[to]) / totalStaked;
-            stackingToken.mint(reward, to);
+            stakingToken.mint(reward, to);
         }
         lastClaimedBlock[to] = block.number;
         _;
@@ -47,7 +46,7 @@ contract TinyBank is ManagedAccess {
 
     function stake(uint256 _amount) external updateReward(msg.sender) {
         require(_amount >= 0, "cannot stake 0 amount");
-        stackingToken.transferFrom(msg.sender, address(this), _amount);
+        stakingToken.transferFrom(msg.sender, address(this), _amount);
         staked[msg.sender] += _amount;
         totalStaked += _amount;
         emit Staked(msg.sender, _amount);
@@ -55,9 +54,18 @@ contract TinyBank is ManagedAccess {
 
     function withdraw(uint256 _amount) external updateReward(msg.sender) {
         require(staked[msg.sender] >= _amount, "insufficient staked token");
-        stackingToken.transfer(msg.sender, _amount);
+        stakingToken.transfer(msg.sender, _amount);
         staked[msg.sender] -= _amount;
         totalStaked -= _amount;
         emit Withdraw(_amount, msg.sender);
+    }
+
+    function currentReward(address to) external view returns (uint256) {
+        if (staked[to] > 0) {
+            uint256 blocks = block.number - lastClaimedBlock[to];
+            return (blocks * rewardPerBlock * staked[to]) / totalStaked;
+        } else {
+            return 0;
+        }
     }
 }

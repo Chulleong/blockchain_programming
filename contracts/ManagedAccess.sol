@@ -10,16 +10,19 @@ abstract contract ManagedAccess {
     mapping(address => bool) public confirmations;
     uint256 public confirmCount;
 
+
     constructor(address _owner, address _manager) {
         owner = _owner;
         manager = _manager;
     }
+
 
     function addManager(address _manager) external onlyOwner {
         require(!isManager[_manager], "Already a manager");
         managers.push(_manager);
         isManager[_manager] = true;
     }
+
 
     function confirm() external {
         require(isManager[msg.sender], "You are not a manager");
